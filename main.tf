@@ -10,9 +10,6 @@ provider "aws" {
   region = var.region
 }
 
-data "aws_caller_identity" "currentContext" {}
-data "aws_region" "currentContext" {}
-
 locals {
   ingresses_rds = [
     {
@@ -39,21 +36,13 @@ module "vpc" {
   cidr                    = var.main_subnet
   azs                     = ["${var.region}a", "${var.region}c", "${var.region}d"]
   private_subnets         = [for i in range(3) : cidrsubnet(var.main_subnet, 4, i + 1)]
-  private_subnet_names    = [for az in ["a", "c", "d"] : "${var.project_name}-${var.envshort}-private-sub-1${az}"]
+  private_subnet_names    = [for az in ["a", "c", "d"] : "private-sub-1${az}"]
   public_subnets          = [for i in range(3) : cidrsubnet(var.main_subnet, 4, i + 4)]
-  public_subnet_names     = [for az in ["a", "c", "d"] : "${var.project_name}-${var.envshort}-public-sub-1${az}"]
+  public_subnet_names     = [for az in ["a", "c", "d"] : "public-sub-1${az}"]
   enable_dns_hostnames    = true
   map_public_ip_on_launch = true
   enable_nat_gateway      = var.enable_nat_gateway
   single_nat_gateway      = var.enable_nat_gateway ? var.enable_single_nat_gateway : false
-  public_subnet_tags      = {
-    "kubernetes.io/cluster/eks-${var.project_name}-${var.envshort}-eks-cluster" = "shared"
-    "kubernetes.io/role/elb"                                                    = 1
-  }
-  private_subnet_tags     = {
-    "kubernetes.io/cluster/eks-${var.project_name}-${var.envshort}-eks-cluster" = "shared"
-    "kubernetes.io/role/internal-elb"                                           = 1
-  }
 }
 
 module "sg_rds" {
